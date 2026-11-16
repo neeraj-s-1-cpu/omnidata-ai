@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7fb">
+  <title>OmniData AI — Make sense of your data</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #171a2b;
+      --muted: #777b8f;
+      --line: #e9eaf1;
+      --paper: #fff;
+      --wash: #f6f7fb;
+      --purple: #6f5bea;
+      --purple-dark: #5944d6;
+      --purple-pale: #f0edff;
+      --mint: #25b98a;
+      --shadow: 0 8px 30px rgba(32, 34, 65, .055);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; min-width: 320px; background: var(--wash); color: var(--ink); }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .shell { display: flex; min-height: 100vh; }
+    .sidebar {
+      position: fixed; inset: 0 auto 0 0; z-index: 3; display: flex; width: 246px;
+      flex-direction: column; padding: 27px 17px 18px; border-right: 1px solid var(--line); background: #fff;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 0 11px; font-size: 17px; font-weight: 750; letter-spacing: -.5px; }
+    .brand-mark { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 10px; background: var(--purple); color: #fff; }
+    .brand-mark svg { width: 19px; height: 19px; }
+    .brand span { color: var(--purple); }
+    .workspace { display: flex; align-items: center; gap: 10px; margin: 31px 2px 27px; padding: 11px; border: 1px solid var(--line); border-radius: 11px; }
+    .workspace-icon { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 9px; background: #e9f8f2; color: #17966e; font-size: 12px; font-weight: 800; }
+    .workspace-copy { min-width: 0; flex: 1; }
+    .workspace-copy strong { display: block; font-size: 11px; }
+    .workspace-copy small { color: var(--muted); font-size: 10px; }
+    .nav-label { margin: 0 11px 9px; color: #a0a2b1; font-size: 9px; font-weight: 750; letter-spacing: 1px; text-transform: uppercase; }
+    .nav { display: grid; gap: 4px; }
+    .nav button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 0; border-radius: 9px; background: transparent; color: #74778a; text-align: left; font-size: 12px; font-weight: 550; }
+    .nav button.active { background: var(--purple-pale); color: var(--purple); font-weight: 700; }
+    .nav svg { width: 16px; height: 16px; }
+    .nav .nav-count { margin-left: auto; padding: 2px 7px; border-radius: 9px; background: #f0f0f5; color: #777b8f; font-size: 9px; }
+    .sidebar-bottom { margin-top: auto; }
+    .plan-card { margin: 0 1px 18px; padding: 14px; border: 1px solid #ece9ff; border-radius: 11px; background: linear-gradient(140deg, #f8f6ff, #fff); }
+    .plan-card strong { display: block; font-size: 11px; }
+    .plan-card p { margin: 6px 0 12px; color: var(--muted); font-size: 10px; line-height: 1.55; }
+    .plan-card button { padding: 0; border: 0; background: transparent; color: var(--purple); font-size: 10px; font-weight: 700; }
+    .profile { display: flex; align-items: center; gap: 10px; padding: 12px 8px 0; border-top: 1px solid var(--line); }
+    .avatar { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 50%; background: #f8ddca; color: #9c5730; font-size: 10px; font-weight: 800; }
+    .profile strong { display: block; font-size: 10px; }
+    .profile small { color: var(--muted); font-size: 9px; }
+    .main { width: calc(100% - 246px); margin-left: 246px; }
+    .topbar { display: flex; height: 70px; align-items: center; justify-content: space-between; padding: 0 42px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.82); }
+    .breadcrumb { color: #9a9cac; font-size: 11px; }
+    .breadcrumb strong { color: var(--ink); font-weight: 650; }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .server-status { display: flex; align-items: center; gap: 6px; color: #777b8f; font-size: 9px; white-space: nowrap; }
+    .server-status:before { width: 6px; height: 6px; border-radius: 50%; background: #e6a23c; content: ""; }
+    .server-status.ready:before { background: var(--mint); }
+    .server-status.offline:before { background: #e45b5b; }
+    .icon-button { display: grid; width: 33px; height: 33px; place-items: center; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: #777b8f; }
+    .icon-button svg { width: 15px; height: 15px; }
+    .help-link { margin-left: 4px; color: #777b8f; text-decoration: none; font-size: 11px; }
+    .content { width: min(1120px, 100%); margin: 0 auto; padding: 34px 42px 50px; }
+    .welcome { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 26px; }
+    .eyebrow { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; color: var(--purple); font-size: 10px; font-weight: 750; letter-spacing: .75px; text-transform: uppercase; }
+    .eyebrow i { width: 6px; height: 6px; border-radius: 50%; background: var(--purple); box-shadow: 0 0 0 3px #eeeaff; }
+    h1 { margin: 0; font-size: clamp(24px, 2.5vw, 31px); font-weight: 700; letter-spacing: -1.15px; }
+    .welcome p { margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+    .date-pill { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: #6e7184; white-space: nowrap; font-size: 10px; }
+    .date-pill svg { width: 14px; height: 14px; }
+    .upload-card { position: relative; overflow: hidden; padding: 21px 23px 17px; border: 1px solid #e8e4ff; border-radius: 14px; background: linear-gradient(110deg, #fff 52%, #faf9ff); box-shadow: var(--shadow); }
+    .upload-card:before { position: absolute; top: -105px; right: 2%; width: 230px; height: 230px; border: 1px solid #f1efff; border-radius: 50%; content: ""; pointer-events: none; }
+    .upload-heading { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .upload-heading h2 { margin: 0; font-size: 13px; font-weight: 700; }
+    .upload-heading p { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
+    .secure-note { display: flex; align-items: center; gap: 5px; color: #888b9c; font-size: 9px; white-space: nowrap; }
+    .secure-note svg { width: 12px; height: 12px; color: var(--mint); }
+    .drop-zone { position: relative; display: flex; min-height: 107px; align-items: center; justify-content: center; gap: 14px; margin-top: 16px; border: 1px dashed #c9c4ef; border-radius: 11px; background: rgba(250,249,255,.65); text-align: left; transition: background .2s, border-color .2s; }
+    .drop-zone.dragover { border-color: var(--purple); background: #f0edff; }
+    .upload-icon { display: grid; width: 40px; height: 40px; flex: 0 0 auto; place-items: center; border-radius: 12px; background: #eeeaff; color: var(--purple); }
+    .upload-icon svg { width: 19px; height: 19px; }
+    .drop-copy strong { display: block; font-size: 11px; }
+    .drop-copy strong span { color: var(--purple); }
+    .drop-copy small { display: block; margin-top: 5px; color: #898c9d; font-size: 9px; }
+    .browse-button { margin-left: 15px; padding: 9px 13px; border: 0; border-radius: 8px; background: var(--purple); color: #fff; font-size: 10px; font-weight: 700; transition: background .15s; }
+    .browse-button:hover, .primary-button:hover { background: var(--purple-dark); }
+    .supported-formats { display: flex; align-items: center; gap: 7px; margin-top: 11px; }
+    .supported-formats > span { margin-right: 2px; color: #999bab; font-size: 9px; }
+    .format-tag { padding: 4px 7px; border: 1px solid #efeff4; border-radius: 5px; background: #fff; color: #787b8b; font-size: 8px; font-weight: 650; }
+    .format-tag.wip { border-style: dashed; color: #a1a2af; }
+    .notice { display: none; margin-top: 12px; padding: 9px 11px; border-radius: 8px; background: #fff7e8; color: #946419; font-size: 10px; line-height: 1.5; }
+    .notice.visible { display: block; }
+    .notice.error { background: #fff0f0; color: #b13838; }
+    .consent-toggle { display: flex; align-items: flex-start; gap: 7px; margin-top: 11px; color: #898c9d; font-size: 9px; line-height: 1.5; }
+    .consent-toggle input { margin: 1px 0 0; accent-color: var(--purple); }
+    .section-heading { display: flex; align-items: center; justify-content: space-between; margin: 29px 0 13px; }
+    .section-heading h2 { margin: 0; font-size: 13px; font-weight: 700; }
+    .section-heading p { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+    .text-button { display: flex; align-items: center; gap: 5px; padding: 6px 0 6px 8px; border: 0; background: transparent; color: var(--purple); font-size: 10px; font-weight: 650; }
+    .text-button svg { width: 13px; height: 13px; }
+    .stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .stat-card { min-width: 0; padding: 15px 16px; border: 1px solid var(--line); border-radius: 11px; background: var(--paper); box-shadow: 0 3px 14px rgba(32,34,65,.025); }
+    .stat-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 9px; font-weight: 550; }
+    .stat-icon { display: grid; width: 26px; height: 26px; place-items: center; border-radius: 8px; background: #f0edff; color: var(--purple); }
+    .stat-icon svg { width: 14px; height: 14px; }
+    .stat-card:nth-child(2) .stat-icon { background: #e9f8f2; color: #1ca67b; }
+    .stat-card:nth-child(3) .stat-icon { background: #fff3e8; color: #de8944; }
+    .stat-card:nth-child(4) .stat-icon { background: #edf4ff; color: #5387df; }
+    .stat-value { overflow: hidden; margin-top: 11px; font-size: 22px; font-weight: 720; letter-spacing: -.8px; text-overflow: ellipsis; white-space: nowrap; }
+    .stat-caption { margin-top: 4px; color: #999bab; font-size: 9px; }
+    .analysis-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(245px, .85fr); gap: 14px; margin-top: 14px; }
+    .panel { min-width: 0; border: 1px solid var(--line); border-radius: 11px; background: var(--paper); box-shadow: 0 3px 14px rgba(32,34,65,.025); }
+    .panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 17px 0; }
+    .panel-heading h3 { margin: 0; font-size: 11px; font-weight: 700; }
+    .panel-heading p { margin: 4px 0 0; color: #9799a9; font-size: 9px; }
+    .select-wrap { position: relative; }
+    select { max-width: 155px; padding: 6px 24px 6px 8px; appearance: none; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: #676a7c; font-size: 9px; }
+    .select-wrap:after { position: absolute; top: 8px; right: 8px; width: 7px; height: 7px; border-right: 1px solid #8e90a0; border-bottom: 1px solid #8e90a0; content: ""; pointer-events: none; transform: rotate(45deg); }
+    .chart-wrap { height: 194px; padding: 13px 15px 11px; }
+    #chart { display: block; width: 100%; height: 100%; }
+    .insight-list { display: grid; gap: 11px; padding: 14px 15px 16px; }
+    .insight { display: flex; align-items: flex-start; gap: 9px; }
+    .insight-mark { display: grid; width: 23px; height: 23px; flex: 0 0 auto; place-items: center; border-radius: 7px; background: #f0edff; color: var(--purple); }
+    .insight-mark svg { width: 12px; height: 12px; }
+    .insight strong { display: block; margin: 1px 0 3px; font-size: 9px; }
+    .insight p { margin: 0; color: #858899; font-size: 9px; line-height: 1.55; white-space: pre-line; }
+    .insight-foot { margin: 0 15px 14px; padding-top: 10px; border-top: 1px solid #f0f0f4; color: #aaaaba; font-size: 8px; }
+    .data-panel { margin-top: 14px; }
+    .table-wrap { overflow: auto; margin-top: 12px; border-top: 1px solid #f1f1f5; }
+    .export-actions { display: flex; align-items: center; gap: 10px; }
+    .ai-button { flex: 0 0 auto; padding: 5px 0 5px 5px; font-size: 9px; }
+    .ai-button:disabled { color: #aaaaba; cursor: not-allowed; }
+    table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+    th, td { padding: 10px 15px; border-bottom: 1px solid #f3f3f6; text-align: left; font-size: 9px; }
+    th { color: #9698a8; font-weight: 600; }
+    td { color: #55596d; }
+    tr:last-child td { border-bottom: 0; }
+    .file-indicator { display: flex; align-items: center; gap: 8px; }
+    .file-badge { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 7px; background: #e9f8f2; color: #199b72; font-size: 7px; font-weight: 800; text-transform: uppercase; }
+    .file-select { padding: 0; border: 0; background: transparent; color: #55596d; text-align: left; font-size: 9px; }
+    .file-select:hover { color: var(--purple); text-decoration: underline; }
+    .preview-empty { padding: 20px; color: #999bab; text-align: center; font-size: 10px; }
+    .text-preview { max-width: 700px; padding: 13px 15px; color: #65697a; font-size: 10px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .empty-state { padding: 23px 15px; color: #999bab; text-align: center; font-size: 10px; }
+    .toast { position: fixed; right: 24px; bottom: 24px; z-index: 5; max-width: min(380px, calc(100vw - 32px)); padding: 12px 16px; border: 1px solid var(--line); border-radius: 9px; background: #fff; box-shadow: var(--shadow); color: var(--ink); font-size: 11px; opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity .2s, transform .2s; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .mobile-menu { display: none; }
+
+    @media (max-width: 1000px) {
+      .sidebar { width: 215px; }
+      .main { width: calc(100% - 215px); margin-left: 215px; }
+      .topbar { padding: 0 27px; }
+      .content { padding: 30px 27px 40px; }
+      .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 700px) {
+      .sidebar { width: 58px; align-items: center; padding: 19px 7px 12px; }
+      .brand { padding: 0; }
+      .brand-name, .workspace, .nav-label, .nav button span, .nav-count, .plan-card, .profile > div:last-child { display: none; }
+      .nav { width: 100%; margin-top: 34px; }
+      .nav button { justify-content: center; padding: 11px 0; }
+      .nav svg { width: 18px; height: 18px; }
+      .profile { justify-content: center; width: 100%; padding: 12px 0 0; }
+      .main { width: calc(100% - 58px); margin-left: 58px; }
+      .topbar { height: 58px; padding: 0 17px; }
+      .help-link { display: none; }
+      .server-status { max-width: 115px; overflow: hidden; text-overflow: ellipsis; }
+      .content { padding: 25px 17px 34px; }
+      .welcome { margin-bottom: 21px; }
+      .date-pill { padding: 8px; font-size: 0; }
+      .date-pill svg { width: 16px; height: 16px; }
+      .upload-card { padding: 17px 14px 14px; }
+      .secure-note { display: none; }
+      .drop-zone { flex-wrap: wrap; gap: 10px; padding: 13px 8px; }
+      .drop-copy { max-width: 55%; }
+      .drop-copy small { line-height: 1.45; }
+      .browse-button { margin-left: 0; }
+      .supported-formats { flex-wrap: wrap; }
+      .analysis-grid { grid-template-columns: 1fr; }
+      .chart-wrap { height: 190px; }
+      .export-actions { flex-wrap: wrap; justify-content: flex-end; gap: 2px 8px; }
+      .consent-toggle { font-size: 8px; }
+    }
+    @media (max-width: 420px) {
+      .stat-grid { gap: 8px; }
+      .stat-card { padding: 12px; }
+      .stat-value { font-size: 19px; }
+      .section-heading { align-items: flex-end; }
+      .welcome p { max-width: 235px; line-height: 1.5; }
+      .drop-zone { justify-content: flex-start; }
+      .browse-button { margin-left: 50px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <a class="brand" href="#" aria-label="OmniData AI home">
+        <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.5 20.5 8v8L12 20.5 3.5 16V8L12 3.5Z" stroke="currentColor" stroke-width="1.7"/><path d="m8 10 4-2 4 2v4l-4 2-4-2v-4Z" stroke="currentColor" stroke-width="1.5"/><path d="m8 10 4 2 4-2m-4 2v4" stroke="currentColor" stroke-width="1.4"/></svg></span>
+        <span class="brand-name">omni<span>data</span> AI</span>
+      </a>
+      <div class="workspace">
+        <div class="workspace-icon">OD</div>
+        <div class="workspace-copy"><strong>My workspace</strong><small>Free plan</small></div>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m3 4.5 3 3 3-3" stroke="#9698A8" stroke-width="1.3"/></svg>
+      </div>
+      <p class="nav-label">Workspace</p>
+      <nav class="nav">
+        <button class="active" type="button" aria-current="page"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/></svg><span>Overview</span></button>
+        <button type="button" id="nav-datasets"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="8" ry="3" stroke="currentColor" stroke-width="1.7"/><path d="M4 5.5v6c0 1.7 3.6 3 8 3m8-9v4" stroke="currentColor" stroke-width="1.7"/><path d="M4 11.5v6c0 1.7 3.6 3 8 3m8-10v1.5" stroke="currentColor" stroke-width="1.7"/><path d="M16 17h6m-3-3v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>My datasets</span><span class="nav-count" id="dataset-count">0</span></button>
+        <button type="button" id="nav-reports"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 3.5h9l5 5v12H5v-17Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3.5v5h5m-10 5h6m-6 3h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>Reports</span></button>
+      </nav>
+      <p class="nav-label" style="margin-top:27px">Manage</p>
+      <nav class="nav">
+        <button type="button" data-notice="Settings will be available when you connect a workspace."><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/><path d="m19.4 15 .1.1a1.8 1.8 0 0 1-2.5 2.5l-.1-.1a1.8 1.8 0 0 0-3 .9v.2a1.8 1.8 0 0 1-3.6 0v-.2a1.8 1.8 0 0 0-3-.9l-.1.1a1.8 1.8 0 0 1-2.5-2.5l.1-.1a1.8 1.8 0 0 0-.9-3h-.2a1.8 1.8 0 0 1 0-3.6h.2a1.8 1.8 0 0 0 .9-3l-.1-.1a1.8 1.8 0 0 1 2.5-2.5l.1.1a1.8 1.8 0 0 0 3-.9v-.2a1.8 1.8 0 0 1 3.6 0v.2a1.8 1.8 0 0 0 3 .9l.1-.1a1.8 1.8 0 0 1 2.5 2.5l-.1.1a1.8 1.8 0 0 0 .9 3h.2a1.8 1.8 0 0 1 0 3.6h-.2a1.8 1.8 0 0 0-.9 3Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span>Settings</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="plan-card"><strong>Unlock more insights ✨</strong><p>Get more storage, advanced analysis, and shareable reports.</p><button type="button" data-notice="Plan options will be available soon.">Explore plans <span aria-hidden="true">→</span></button></div>
+        <div class="profile"><div class="avatar">JD</div><div><strong>Jamie Davis</strong><small>Personal account</small></div><svg style="margin-left:auto" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><circle cx="3" cy="7" r="1" fill="#9294A3"/><circle cx="7" cy="7" r="1" fill="#9294A3"/><circle cx="11" cy="7" r="1" fill="#9294A3"/></svg></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="breadcrumb">Workspace <span aria-hidden="true">/</span> <strong>Overview</strong></div>
+        <div class="top-actions">
+          <span class="server-status" id="server-status" role="status">Connecting to local server…</span>
+          <button class="icon-button" type="button" aria-label="Notifications" data-notice="You're all caught up."><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Zm-8 12h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <a class="help-link" href="mailto:hello@omni-data.ai">Help center</a>
+        </div>
+      </header>
+      <div class="content">
+        <section class="welcome">
+          <div><div class="eyebrow"><i></i> Your data, in focus</div><h1>Good morning, Jamie <span aria-hidden="true">👋</span></h1><p>Bring your data together and turn it into your next big insight.</p></div>
+          <div class="date-pill"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M7.5 3.5v3m9-3v3m-13 3h17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span id="today-date"></span></div>
+        </section>
+
+        <section class="upload-card" aria-labelledby="upload-title">
+          <div class="upload-heading"><div><h2 id="upload-title">Start with your data</h2><p>Upload a file to explore it, find patterns, and uncover insights.</p></div><div class="secure-note" id="privacy-note"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Files are processed locally</div></div>
+          <div class="drop-zone" id="drop-zone" role="group" aria-label="Upload files">
+            <div class="upload-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14.5v4A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="drop-copy"><strong>Drag &amp; drop files here, or <span>browse</span></strong><small>Analyze spreadsheets, documents, images, and audio files.</small></div>
+            <button type="button" class="browse-button" id="browse-button">Choose files</button>
+            <input id="file-input" type="file" hidden multiple accept=".csv,.tsv,.json,.txt,.xlsx,.pdf,.docx,.png,.jpg,.jpeg,.webp,.tif,.tiff,.mp3,.wav,.m4a,.mp4,.mpeg,.mpga,.webm">
+          </div>
+          <div class="supported-formats" aria-label="File formats">
+            <span>Supported</span><span class="format-tag">CSV / TSV / JSON</span><span class="format-tag">XLSX</span><span class="format-tag">TXT / DOCX / PDF</span><span class="format-tag">Images (OCR)</span><span class="format-tag">Audio (AI)</span>
+          </div>
+          <label class="consent-toggle"><input id="audio-consent" type="checkbox" disabled><span>Transcribe audio with OpenAI. Audio will be sent to OpenAI for transcription.</span></label>
+          <div class="notice" id="upload-notice" role="status" aria-live="polite"></div>
+        </section>
+
+        <section aria-labelledby="summary-title">
+          <div class="section-heading"><div><h2 id="summary-title">Your data at a glance</h2><p>A quick overview of the currently selected dataset.</p></div><button class="text-button" id="sample-button" type="button"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.6-6.4-2.1 2.1M7.7 16.3l-2.1 2.1m12.8 0-2.1-2.1M7.7 7.7 5.6 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.7"/></svg>Try sample data</button></div>
+          <div class="stat-grid">
+            <article class="stat-card"><div class="stat-top"><span>Records</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 5h14M5 10h14M5 15h14M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="3" cy="5" r=".7" fill="currentColor"/><circle cx="3" cy="10" r=".7" fill="currentColor"/><circle cx="3" cy="15" r=".7" fill="currentColor"/><circle cx="3" cy="20" r=".7" fill="currentColor"/></svg></span></div><div class="stat-value" id="records-value">—</div><div class="stat-caption" id="records-caption">Rows in your dataset</div></article>
+            <article class="stat-card"><div class="stat-top"><span>Data fields</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="4" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.7"/><rect x="4" y="14" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="14" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.7"/></svg></span></div><div class="stat-value" id="fields-value">—</div><div class="stat-caption" id="fields-caption">Columns detected</div></article>
+            <article class="stat-card"><div class="stat-top"><span>Data quality</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span></div><div class="stat-value" id="quality-value">—</div><div class="stat-caption" id="quality-caption">Completeness score</div></article>
+            <article class="stat-card"><div class="stat-top"><span>Numeric fields</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 19V9m7 10V5m7 14v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 19.5h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></div><div class="stat-value" id="numeric-value">—</div><div class="stat-caption" id="numeric-caption">Ready to visualize</div></article>
+          </div>
+        </section>
+
+        <section class="analysis-grid" aria-label="Analysis">
+          <article class="panel">
+            <div class="panel-heading"><div><h3>Explore your data</h3><p id="chart-subtitle">A visual snapshot of your dataset.</p></div><div class="select-wrap"><select id="chart-select" aria-label="Choose a field to chart" disabled><option value="">No numeric fields</option></select></div></div>
+            <div class="chart-wrap"><svg id="chart" role="img" aria-label="Dataset chart"></svg></div>
+          </article>
+          <article class="panel">
+            <div class="panel-heading"><div><h3>Data insights</h3><p>Local statistics; optional AI analysis.</p></div><button class="text-button ai-button" id="ai-insights-button" type="button" disabled title="Configure OPENAI_API_KEY in .env to enable AI insights">Generate AI insights</button></div>
+            <div class="insight-list" id="insight-list"><div class="empty-state">Upload a dataset or try sample data to see insights.</div></div>
+            <div class="insight-foot" id="insight-foot">AI analysis is optional and only runs when you request it.</div>
+          </article>
+        </section>
+
+        <section class="panel data-panel" aria-labelledby="preview-title">
+          <div class="panel-heading"><div><h3 id="preview-title">Data preview</h3><p id="preview-caption">A preview of the selected dataset.</p></div><div class="export-actions"><button class="text-button" type="button" id="export-data-button" hidden>Export preview CSV</button><button class="text-button" type="button" id="export-report-button" hidden>Download report</button></div></div>
+          <div class="table-wrap"><table id="preview-table"><thead></thead><tbody><tr><td><div class="empty-state">Analyze a file to preview its contents.</div></td></tr></tbody></table></div>
+        </section>
+
+        <section class="panel data-panel" aria-labelledby="files-title">
+          <div class="panel-heading"><div><h3 id="files-title">Recent files</h3><p>Your uploaded and analyzed files.</p></div><button class="text-button" type="button" id="clear-button" hidden>Clear files</button></div>
+          <div class="table-wrap"><table><thead><tr><th>FILE NAME</th><th>TYPE</th><th>SIZE</th><th>STATUS</th></tr></thead><tbody id="file-list"><tr><td colspan="4"><div class="empty-state">Your files will appear here. Try the sample dataset to get started.</div></td></tr></tbody></table></div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      "use strict";
+      var $ = function (selector) { return document.querySelector(selector); };
+      var state = {
+        headers: [], rows: [], files: [], datasets: [], activeFile: null,
+        summary: null, insights: [], aiText: "", text: "", aiConfigured: false, isSample: false
+      };
+      var toastTimer;
+      var nextDatasetId = 1;
+      var sampleRows = [
+        { Month: "Jan", Revenue: 18400, Orders: 312, Visitors: 4820 },
+        { Month: "Feb", Revenue: 21200, Orders: 354, Visitors: 5210 },
+        { Month: "Mar", Revenue: 19800, Orders: 338, Visitors: 4980 },
+        { Month: "Apr", Revenue: 25700, Orders: 419, Visitors: 6040 },
+        { Month: "May", Revenue: 23800, Orders: 396, Visitors: 5720 },
+        { Month: "Jun", Revenue: 29100, Orders: 467, Visitors: 6830 },
+        { Month: "Jul", Revenue: 31600, Orders: 502, Visitors: 7120 },
+        { Month: "Aug", Revenue: 28400, Orders: 461, Visitors: 6580 },
+        { Month: "Sep", Revenue: 35200, Orders: 548, Visitors: 7860 },
+        { Month: "Oct", Revenue: 32900, Orders: 519, Visitors: 7420 },
+        { Month: "Nov", Revenue: 38700, Orders: 603, Visitors: 8510 },
+        { Month: "Dec", Revenue: 42800, Orders: 668, Visitors: 9230 }
+      ];
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, function (char) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char];
+        });
+      }
+
+      function showToast(message) {
+        var toast = $("#toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(function () { toast.classList.remove("show"); }, 2800);
+      }
+
+      function setNotice(message, isError) {
+        var notice = $("#upload-notice");
+        notice.textContent = message;
+        notice.classList.toggle("error", Boolean(isError));
+        notice.classList.toggle("visible", Boolean(message));
+      }
+
+      function numberFields() {
+        if (state.summary && Array.isArray(state.summary.numericFields)) return state.summary.numericFields;
+        return state.headers.filter(function (header) {
+          var values = state.rows.map(function (row) { return row[header]; }).filter(function (value) { return typeof value === "number" && Number.isFinite(value); });
+          return values.length >= 2 && values.length / Math.max(state.rows.length, 1) >= .5;
+        });
+      }
+
+      function quality() {
+        if (state.summary && Number.isFinite(state.summary.completeness)) return state.summary.completeness;
+        if (!state.headers.length || !state.rows.length) return 0;
+        var cells = state.headers.length * state.rows.length, filled = 0;
+        state.rows.forEach(function (row) { state.headers.forEach(function (header) { if (row[header] !== "" && row[header] != null) filled++; }); });
+        return Math.round(filled / cells * 100);
+      }
+
+      function formatNumber(value) {
+        return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(value);
+      }
+
+      function renderStats() {
+        var nums = numberFields();
+        var records = state.summary ? state.summary.records : state.rows.length;
+        var fields = state.summary ? state.summary.fields : state.headers.length;
+        $("#records-value").textContent = records ? formatNumber(records) : "—";
+        $("#records-caption").textContent = records ? "Records in " + (state.activeFile || "your dataset") : "Rows in your dataset";
+        $("#fields-value").textContent = fields ? formatNumber(fields) : "—";
+        $("#fields-caption").textContent = state.headers.length ? "Columns detected" : "Columns detected";
+        $("#quality-value").textContent = records ? quality() + "%" : "—";
+        $("#quality-caption").textContent = records ? "Non-empty cells" : "Completeness score";
+        $("#numeric-value").textContent = fields ? formatNumber(nums.length) : "—";
+        $("#numeric-caption").textContent = fields ? "Ready to visualize" : "Ready to visualize";
+        var select = $("#chart-select");
+        select.innerHTML = nums.length ? nums.map(function (name) { return '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + "</option>"; }).join("") : '<option value="">No numeric fields</option>';
+        select.disabled = nums.length === 0;
+        $("#chart-subtitle").textContent = records ? (state.activeFile || "Dataset") + " · " + formatNumber(records) + " records" : "A visual snapshot of your dataset.";
+        $("#ai-insights-button").disabled = !state.aiConfigured || !records;
+        $("#ai-insights-button").title = state.aiConfigured ? "Send the current dataset or extracted text to OpenAI for analysis" : "Configure OPENAI_API_KEY in .env to enable AI insights";
+        $("#export-data-button").hidden = !records;
+        $("#export-report-button").hidden = !records;
+        renderChart();
+        renderInsights();
+        renderTable();
+        renderPreview();
+      }
+
+      function svgElement(tag, attributes) {
+        var el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+        Object.keys(attributes).forEach(function (key) { el.setAttribute(key, attributes[key]); });
+        return el;
+      }
+
+      function renderChart() {
+        var svg = $("#chart");
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+        var width = Math.max(svg.clientWidth, 300), height = 166;
+        svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+        svg.setAttribute("preserveAspectRatio", "none");
+        var field = $("#chart-select").value;
+        var points = state.rows.map(function (row, index) {
+          return { row: row, index: index, value: row[field] };
+        }).filter(function (point) { return typeof point.value === "number" && Number.isFinite(point.value); });
+        if (points.length > 70) {
+          var allPoints = points;
+          points = Array.from({ length: 70 }, function (_, index) {
+            return allPoints[Math.round(index * (allPoints.length - 1) / 69)];
+          });
+        }
+        if (!points.length) {
+          var text = svgElement("text", { x: width / 2, y: 82, "text-anchor": "middle", fill: "#a1a3b1", "font-size": "11", "font-family": "system-ui, sans-serif" });
+          text.textContent = state.rows.length ? "No numeric fields to chart" : "Your visualization will appear here";
+          svg.appendChild(text);
+          return;
+        }
+        var left = 43, right = 12, top = 8, bottom = 25, chartW = width - left - right, chartH = height - top - bottom;
+        var min = Math.min(0, ...points.map(function (point) { return point.value; }));
+        var max = Math.max(0, ...points.map(function (point) { return point.value; }));
+        var range = max - min || 1, zeroY = top + max / range * chartH;
+        for (var g = 0; g <= 3; g++) {
+          var y = top + chartH * g / 3;
+          svg.appendChild(svgElement("line", { x1: left, y1: y, x2: width - right, y2: y, stroke: "#f0f0f5", "stroke-width": "1" }));
+          var label = svgElement("text", { x: left - 7, y: y + 3, "text-anchor": "end", fill: "#a0a2af", "font-size": "8", "font-family": "system-ui, sans-serif" });
+          var labelValue = max - range * g / 3;
+          label.textContent = labelValue >= 1000 ? (labelValue / 1000).toFixed(labelValue >= 10000 ? 0 : 1) + "k" : formatNumber(Math.round(labelValue));
+          svg.appendChild(label);
+        }
+        var step = chartW / points.length, barW = Math.min(24, step * .58);
+        points.forEach(function (point, index) {
+          var y = top + (max - point.value) / range * chartH;
+          var barY = Math.min(y, zeroY), barH = Math.max(2, Math.abs(zeroY - y)), x = left + step * index + (step - barW) / 2;
+          svg.appendChild(svgElement("rect", { x: x, y: barY, width: barW, height: barH, rx: 3, fill: index === points.length - 1 ? "#6f5bea" : "#c9c2ff" }));
+          var categoryField = state.headers.find(function (header) { return typeof point.row[header] !== "number" && point.row[header] !== ""; });
+          var category = categoryField ? String(point.row[categoryField]) : String(point.index + 1);
+          if (category.length > 6) category = category.slice(0, 5) + "…";
+          var xLabel = svgElement("text", { x: x + barW / 2, y: height - 7, "text-anchor": "middle", fill: "#9799a8", "font-size": "8", "font-family": "system-ui, sans-serif" });
+          xLabel.textContent = category;
+          svg.appendChild(xLabel);
+        });
+      }
+
+      function renderInsights() {
+        var container = $("#insight-list");
+        if (!state.rows.length) {
+          container.innerHTML = '<div class="empty-state">Upload a dataset or try sample data to see insights.</div>';
+          $("#insight-foot").textContent = "AI analysis is optional and only runs when you request it.";
+          return;
+        }
+        var items = (state.insights || []).slice(0, 3).map(function (item) {
+          return { title: item.title || "Data insight", text: item.text || "" };
+        });
+        if (state.aiText) items.unshift({ title: "AI analysis", text: state.aiText });
+        container.innerHTML = items.map(function (item, index) {
+          var icon = index === 0 && state.aiText
+            ? '<path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.6-6.4-2.1 2.1M7.7 16.3l-2.1 2.1m12.8 0-2.1-2.1M7.7 7.7 5.6 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>'
+            : '<path d="M4 17 9 12l3 3 7-8M14 7h5v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>';
+          return '<div class="insight"><span class="insight-mark"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' + icon + '</svg></span><div><strong>' + escapeHtml(item.title) + "</strong><p>" + escapeHtml(item.text) + "</p></div></div>";
+        }).join("");
+        $("#insight-foot").textContent = state.aiText
+          ? "AI analysis was requested and sent to OpenAI. Verify important conclusions against the source data."
+          : "Local statistical insights. AI analysis sends data to OpenAI only when you request it.";
+      }
+
+      function renderTable() {
+        var tbody = $("#file-list"), files = state.files;
+        $("#dataset-count").textContent = state.datasets.length;
+        $("#clear-button").hidden = files.length === 0;
+        if (!files.length) {
+          tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state">Your files will appear here. Try the sample dataset to get started.</div></td></tr>';
+          return;
+        }
+        tbody.innerHTML = files.map(function (file) {
+          var ext = file.name.split(".").pop().toUpperCase().slice(0, 4);
+          var name = file.datasetId
+            ? '<button class="file-select" type="button" data-dataset-id="' + escapeHtml(file.datasetId) + '">' + escapeHtml(file.name) + "</button>"
+            : escapeHtml(file.name);
+          return "<tr><td><span class=\"file-indicator\"><span class=\"file-badge\">" + escapeHtml(ext) + "</span>" + name + "</span></td><td>" + escapeHtml(file.type) + "</td><td>" + escapeHtml(file.size) + "</td><td>" + escapeHtml(file.status) + "</td></tr>";
+        }).join("");
+      }
+
+      function renderPreview() {
+        var table = $("#preview-table"), caption = $("#preview-caption");
+        var head = table.querySelector("thead"), body = table.querySelector("tbody");
+        if (!state.rows.length) {
+          caption.textContent = "A preview of the selected dataset.";
+          head.innerHTML = "";
+          body.innerHTML = '<tr><td><div class="empty-state">Analyze a file to preview its contents.</div></td></tr>';
+          return;
+        }
+        var totalRows = state.summary ? state.summary.records : state.rows.length;
+        caption.textContent = "Showing up to 10 of " + formatNumber(totalRows) + " records for " + (state.activeFile || "the selected dataset") + "; server preview limit is 1,000 rows.";
+        head.innerHTML = "<tr>" + state.headers.map(function (header) { return "<th>" + escapeHtml(header) + "</th>"; }).join("") + "</tr>";
+        body.innerHTML = state.rows.slice(0, 10).map(function (row) {
+          return "<tr>" + state.headers.map(function (header) {
+            var value = row[header];
+            return "<td>" + escapeHtml(value == null ? "" : value) + "</td>";
+          }).join("") + "</tr>";
+        }).join("");
+        if (state.text) {
+          body.innerHTML += '<tr><td colspan="' + state.headers.length + '"><div class="text-preview">' + escapeHtml(state.text.slice(0, 2500)) + (state.text.length > 2500 ? "…" : "") + "</div></td></tr>";
+        }
+      }
+
+      function bytesLabel(size) {
+        if (size < 1024) return size + " B";
+        if (size < 1024 * 1024) return (size / 1024).toFixed(1) + " KB";
+        return (size / (1024 * 1024)).toFixed(1) + " MB";
+      }
+
+      function activateDataset(dataset) {
+        state.headers = dataset.analysis.headers || [];
+        state.rows = dataset.analysis.rows || [];
+        state.summary = dataset.analysis.summary || null;
+        state.insights = dataset.analysis.insights || [];
+        state.text = dataset.analysis.text || "";
+        state.activeFile = dataset.name;
+        state.aiText = dataset.aiText || "";
+        state.activeId = dataset.id;
+        state.isSample = Boolean(dataset.isSample);
+        renderStats();
+      }
+
+      async function analyzeFile(file) {
+        var id = "dataset-" + Date.now() + "-" + nextDatasetId++;
+        var ext = file.name.split(".").pop().toLowerCase();
+        var item = {
+          id: id,
+          name: file.name,
+          type: ext.toUpperCase() || "FILE",
+          size: bytesLabel(file.size),
+          status: "Processing…"
+        };
+        state.files.unshift(item);
+        renderTable();
+
+        var form = new FormData();
+        form.append("file", file);
+        if (["mp3", "wav", "m4a", "mp4", "mpeg", "mpga", "webm"].indexOf(ext) >= 0 && $("#audio-consent").checked) {
+          form.append("transcribeAudio", "true");
+        }
+        try {
+          var response = await fetch("/api/analyze", { method: "POST", body: form });
+          var result = await response.json().catch(function () { return {}; });
+          if (!response.ok) throw new Error(result.error || "The server could not analyze this file.");
+          var dataset = { id: id, name: file.name, analysis: result, aiText: "", isSample: false };
+          state.datasets.unshift(dataset);
+          state.aiConfigured = Boolean(result.aiConfigured);
+          item.datasetId = id;
+          item.status = "Analyzed";
+          activateDataset(dataset);
+          return dataset;
+        } catch (error) {
+          item.status = "Failed";
+          renderTable();
+          throw new Error(file.name + ": " + (error.message || "Analysis failed."));
+        }
+      }
+
+      async function processFiles(fileList) {
+        var files = Array.prototype.slice.call(fileList);
+        if (!files.length) return;
+        setNotice("", false);
+        $("#browse-button").disabled = true;
+        var succeeded = 0, errors = [];
+        for (var index = 0; index < files.length; index++) {
+          try {
+            await analyzeFile(files[index]);
+            succeeded++;
+          } catch (error) {
+            errors.push(error.message);
+          }
+        }
+        $("#browse-button").disabled = false;
+        renderStats();
+        renderTable();
+        if (errors.length) setNotice(errors.join(" "), true);
+        else if (succeeded) setNotice(succeeded + " file(s) analyzed. Uploaded files are processed in memory and not saved.", false);
+      }
+
+      function loadSample() {
+        var rows = sampleRows.map(function (row) { return Object.assign({}, row); });
+        var analysis = {
+          kind: "table",
+          headers: ["Month", "Revenue", "Orders", "Visitors"],
+          rows: rows,
+          totalRows: rows.length,
+          summary: {
+            records: rows.length,
+            fields: 4,
+            completeness: 100,
+            numericFields: ["Revenue", "Orders", "Visitors"]
+          },
+          insights: [
+            { title: "Complete dataset", text: "All cells are populated across 12 records." },
+            { title: "Revenue at a glance", text: "Average 28,966.67; range 18,400 to 42,800." },
+            { title: "Monthly pattern", text: "Revenue is highest in December in this illustrative sample." }
+          ],
+          aiConfigured: state.aiConfigured
+        };
+        var dataset = {
+          id: "sample-sales",
+          name: "sample-sales.csv",
+          analysis: analysis,
+          aiText: "",
+          isSample: true
+        };
+        state.datasets = state.datasets.filter(function (item) { return item.id !== dataset.id; });
+        state.datasets.unshift(dataset);
+        state.files = state.files.filter(function (file) { return file.id !== dataset.id; });
+        state.files.unshift({
+          id: dataset.id, datasetId: dataset.id, name: dataset.name,
+          type: "CSV", size: "1.2 KB", status: "Sample"
+        });
+        activateDataset(dataset);
+        renderTable();
+        setNotice("Sample data loaded. It is illustrative and not based on your business.", false);
+      }
+
+      function downloadFile(name, content, type) {
+        var url = URL.createObjectURL(new Blob([content], { type: type }));
+        var anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = name;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      }
+
+      function exportData() {
+        if (!state.headers.length || !state.rows.length) return;
+        var lines = [state.headers].concat(state.rows.map(function (row) {
+          return state.headers.map(function (header) { return row[header] == null ? "" : row[header]; });
+        })).map(function (row) {
+          return row.map(function (value) {
+            var text = String(value);
+            if (typeof value === "string" && /^[\t\r\n ]*[=+\-@]/.test(text)) text = "'" + text;
+            return /[",\r\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+          }).join(",");
+        });
+        var fileBase = (state.activeFile || "omnidata").replace(/\.[^.]+$/, "");
+        downloadFile(fileBase + "-preview.csv", "\uFEFF" + lines.join("\r\n"), "text/csv;charset=utf-8");
+      }
+
+      function exportReport() {
+        if (!state.summary) return;
+        var report = {
+          file: state.activeFile,
+          generatedAt: new Date().toISOString(),
+          summary: state.summary,
+          localInsights: state.insights,
+          aiInsights: state.aiText || null,
+          previewRows: state.rows.length,
+          note: "The report contains the analyzed preview returned by the server, not the original file."
+        };
+        var fileBase = (state.activeFile || "omnidata").replace(/\.[^.]+$/, "");
+        downloadFile(fileBase + "-report.json", JSON.stringify(report, null, 2), "application/json");
+      }
+
+      async function generateAiInsights() {
+        var active = state.datasets.find(function (dataset) { return dataset.id === state.activeId; });
+        if (!active || !state.aiConfigured) return;
+        if (!window.confirm("This sends a sample of the selected data and any extracted text to OpenAI. Continue?")) return;
+        var button = $("#ai-insights-button");
+        button.disabled = true;
+        button.textContent = "Analyzing…";
+        try {
+          var response = await fetch("/api/insights", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              kind: active.analysis.kind,
+              summary: active.analysis.summary,
+              headers: active.analysis.headers.slice(0, 80),
+              rows: active.analysis.rows.slice(0, 20),
+              text: typeof active.analysis.text === "string" ? active.analysis.text.slice(0, 6000) : ""
+            })
+          });
+          var result = await response.json().catch(function () { return {}; });
+          if (!response.ok) throw new Error(result.error || "AI analysis failed.");
+          active.aiText = result.text;
+          state.aiText = result.text;
+          renderInsights();
+          showToast("AI insights generated.");
+        } catch (error) {
+          setNotice(error.message || "AI analysis failed.", true);
+        } finally {
+          button.textContent = "Generate AI insights";
+          button.disabled = !state.aiConfigured || !state.rows.length;
+        }
+      }
+
+      $("#today-date").textContent = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(new Date());
+      $("#browse-button").addEventListener("click", function () { $("#file-input").click(); });
+      $("#nav-datasets").addEventListener("click", function () {
+        $("#files-title").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      $("#nav-reports").addEventListener("click", function () {
+        if (!state.summary) showToast("Analyze a file to enable report downloads.");
+        $("#preview-title").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      $("#file-input").addEventListener("change", function (event) {
+        processFiles(event.target.files);
+        event.target.value = "";
+      });
+      $("#sample-button").addEventListener("click", loadSample);
+      $("#chart-select").addEventListener("change", renderChart);
+      $("#ai-insights-button").addEventListener("click", generateAiInsights);
+      $("#export-data-button").addEventListener("click", exportData);
+      $("#export-report-button").addEventListener("click", exportReport);
+      $("#file-list").addEventListener("click", function (event) {
+        var button = event.target.closest("[data-dataset-id]");
+        if (!button) return;
+        var dataset = state.datasets.find(function (item) { return item.id === button.getAttribute("data-dataset-id"); });
+        if (dataset) activateDataset(dataset);
+      });
+      $("#clear-button").addEventListener("click", function () {
+        var aiConfigured = state.aiConfigured;
+        state = {
+          headers: [], rows: [], files: [], datasets: [], activeFile: null,
+          summary: null, insights: [], aiText: "", text: "",
+          aiConfigured: aiConfigured, isSample: false
+        };
+        setNotice("", false);
+        renderStats();
+        renderTable();
+        showToast("Workspace files cleared.");
+      });
+      $("#drop-zone").addEventListener("dragover", function (event) { event.preventDefault(); $("#drop-zone").classList.add("dragover"); });
+      $("#drop-zone").addEventListener("dragleave", function (event) { if (!$("#drop-zone").contains(event.relatedTarget)) $("#drop-zone").classList.remove("dragover"); });
+      $("#drop-zone").addEventListener("drop", function (event) {
+        event.preventDefault();
+        $("#drop-zone").classList.remove("dragover");
+        processFiles(event.dataTransfer.files);
+      });
+      document.querySelectorAll("[data-notice]").forEach(function (button) {
+        button.addEventListener("click", function () { showToast(button.getAttribute("data-notice")); });
+      });
+      fetch("/api/health").then(function (response) {
+        if (!response.ok) throw new Error("Local server is not available.");
+        return response.json();
+      }).then(function (health) {
+        state.aiConfigured = Boolean(health.aiConfigured);
+        var status = $("#server-status");
+        status.classList.add("ready");
+        status.textContent = state.aiConfigured ? "Local server · AI enabled" : "Local server · AI not configured";
+        $("#audio-consent").disabled = !state.aiConfigured;
+        if (!state.aiConfigured) $("#audio-consent").parentElement.title = "Configure OPENAI_API_KEY in .env to enable audio transcription";
+        renderStats();
+      }).catch(function () {
+        var status = $("#server-status");
+        status.classList.add("offline");
+        status.textContent = "Local server offline";
+        setNotice("Start the app with npm start, then open http://localhost:3000 to analyze files.", true);
+      });
+      window.addEventListener("resize", renderChart);
+      renderStats();
+      renderTable();
+    }());
+  </script>
+</body>
+</html>
